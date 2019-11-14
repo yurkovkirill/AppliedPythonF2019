@@ -1,1 +1,4 @@
 # TODO: добавить зависимости, если требуется
+requests
+flask
+flask_login

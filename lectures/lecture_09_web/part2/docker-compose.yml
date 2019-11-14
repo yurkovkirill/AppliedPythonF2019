@@ -27,7 +27,15 @@ services:
       - backend
     command: python run.py
 
-  # TODO: добавить сервис sale
+  sale:
+    build:
+      context: ./sale
+    container_name: sale_service
+    volumes:
+      - "./sale/src:/code"
+    networks:
+      - backend
+    command: python /code/run.py 
 
 networks:
   backend:
