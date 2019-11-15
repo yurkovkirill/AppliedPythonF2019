@@ -29,7 +29,7 @@ def makeFlight(data):
 class FlightsWI(Resource):
     def get(self):
         logger.info(f"GET request for all flights completed")
-        return orm.select_all()
+        return orm.select_all(), 200
 
     def post(self):
         t = time.time()
@@ -42,7 +42,7 @@ class FlightsWI(Resource):
 
         flight = makeFlight(data)
         orm.insert(flight)
-        logger.info(f"POST request comleted | id = {id_} | Timing: {(time.time()-t)}")
+        logger.info(f"POST request comleted | Timing: {(time.time()-t)}")
         return flight, 201
 
 
@@ -57,7 +57,7 @@ class FlightsI(Resource):
             return "Error: wrong input", 400
 
         flight = makeFlight(data)
-        result = orm.update(flight, id_)
+        result = orm.update(id_, flight)
         print(f"ROWS UPDATED: {result}")
         logger.info(f"PUT request comleted | id = {id_} | Timing: {(time.time()-t)}")
         return flight, 202

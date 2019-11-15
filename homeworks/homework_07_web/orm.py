@@ -10,7 +10,7 @@ from sqlalchemy.sql import func
 import sys
 import os
 
-engine = create_engine('sqlite:///:memory:')
+engine = create_engine('sqlite:///database.db')
 session = Session(bind=engine)
 Base = declarative_base()
 
@@ -27,6 +27,14 @@ class Flights(Base):
     airport = relationship("Dest_airports", backref='flights')
     aircraft = relationship("Aircraft_types", backref='flights')
 
+    def deserializ(self):
+        result = {"departure": self.departure,
+                "arrival": self.arrival,
+                "travel_time": self.travel_time,
+                "destination": self.airport.airport,
+                "aircraft_type": self.aircraft.aircraft}
+        return result
+
 
 class Dest_airports(Base):
     __tablename__ = 'dest_airports'
@@ -40,38 +48,41 @@ class Aircraft_types(Base):
     aircraft = Column(String(100), unique=True, nullable=True)
 
 
-def select_all(self):
+def select_all():
     query = session.query(Flights).all()
-    return query, True
+    result = []
+    for flight in query:
+        result.append(flight.deserializ())
+    return result, True
 
 
 def select_by_id(id_):
     query = session.query(Flights).filter(Flights.id == id_).first()
     if flight:
-        return query, True
+        return query.deserializ(), True
     else:
         None, False
 
 
 def insert(flight_):
-    airport = session.query(Dest_airports).filter(Dest_airports.airport == flight_["destination"]).first()
-    if not airport:
-        airport = Dest_airports(airport=airport_name)
-        session.add(airport)
+    airport_ = session.query(Dest_airports).filter(Dest_airports.airport == flight_["destination"]).first()
+    if not airport_:
+        airport_ = Dest_airports(airport=flight_["destination"])
+        session.add(airport_)
         session.commit()
-    aircraft = session.query(Aircraft_types).filter(Aircraft_types.aircraft == flight_["aircraft_type"]).first()
-    if not aircraft:
-        aircraft = Aircraft_types(aircraft=aircraft_name)
-        session.add(aircraft)
-        session.commit()
+    aircraft_ = session.query(Aircraft_types).filter(Aircraft_types.aircraft == flight_["aircraft_type"]).first()
+    if not aircraft_:
+        aircraft_ = Aircraft_types(aircraft=flight_["aircraft_type"])
+        #session.add(aircraft_) TODO
+        #session.commit()
 
     flightdb = Flights(
                     departure=flight_["departure"],
                     arrival=flight_["arrival"],
                     travel_time=flight_["travel_time"],
-                    airport=flight_["destination"],
-                    aircraft=flight_["aircraft_type"])
-    session.add(flight_)
+                    airport_id=airport_.id,
+                    aircraft_id=aircraft_.id)
+    session.add(flightdb)
     session.commit()
     return True
 
@@ -87,22 +98,22 @@ def delete(id_):
 
 
 def update(id_, flight_):
-    airport = session.query(Dest_airports).filter(Dest_airports.airport == flight_["destination"]).first()
-    if not airport:
-        airport = Airports(airport=flight_["departure"])
-        session.add(airport)
+    airport_ = session.query(Dest_airports).filter(Dest_airports.airport == flight_["destination"]).first()
+    if not airport_:
+        airport_ = Dest_airports(airport=flight_["departure"])
+        session.add(airport_)
         session.commit()
-    aircraft = session.query(Aircraft_types).filter(Aircraft_types.aircraft == flight_["aircraft_type"]).first()
-    if not aircraft:
-        aircraft = Aircrafts(aircraft=flight_["aircraft_type"])
-        session.add(aircraft)
+    aircraft_ = session.query(Aircraft_types).filter(Aircraft_types.aircraft == flight_["aircraft_type"]).first()
+    if not aircraft_:
+        aircraft_ = Aircraft_types(aircraft=flight_["aircraft_type"])
+        session.add(aircraft_)
         session.commit()
 
     session.query(Flights).filter(Flights.id == id_).\
         update({Flights.departure: flight_["departure"],
                 Flights.arrival: flight_["arrival"],
                 Flights.travel_time: flight_["travel_time"],
-                Flights.airport: flight_["destination"],
-                Flights.aircraft: flight_["aircraft_type"]})
+                Flights.airport_id: aircraft_.id,
+                Flights.aircraft_id: aircraft_.id})
     session.commit()
     return True
